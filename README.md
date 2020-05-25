@@ -33,4 +33,4 @@ Config.init("path/filename.conf");
 
 ## Download
 
-[commons-config-1.0.0.jar](https://github.com/d-william/InfinityConfig/releases/download/1.0.0/commons-config-1.0.0.jar)
+[commons-config-1.0.1.jar](https://github.com/d-william/InfinityConfig/releases/download/1.0.1/commons-config-1.0.1.jar)
