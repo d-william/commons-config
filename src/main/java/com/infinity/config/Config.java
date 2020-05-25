@@ -35,44 +35,43 @@ public class Config {
         System.out.println(dateFormat.format(new Date()) + ERROR + CONFIG + message);
     }
 
-    public static void initConfig() {
+    public static void init() {
         String configName = System.getProperty(CONFIG_KEY_PREFIX + "filename");
-        if (configName == null) initConfig(DEFAULT_CONFIG);
-        else initConfig(configName);
+        if (configName == null) init(DEFAULT_CONFIG);
+        else init(configName);
     }
 
-    public static void initConfig(String configName) {
+    public static void init(String configName) {
 
         if (configName == null) {
             error("Given config name is null");
-            throw new IllegalArgumentException("configName is null");
+            return;
         }
 
         if ("".equals(configName)) {
             error("Given config name is empty");
-            throw new IllegalArgumentException("configName is empty");
+            return;
         }
 
         File configFile = new File(configName);
         if (!configFile.exists()) {
-            warning(configFile.getAbsolutePath() + " does not exist");
+            error(configFile.getAbsolutePath() + " does not exist");
             info(CONFIG_IGNORED);
             return;
         }
         if (!configFile.isFile()) {
-            warning(configFile.getAbsolutePath() + " is not a file");
+            error(configFile.getAbsolutePath() + " is not a file");
             info(CONFIG_IGNORED);
             return;
         }
 
-        Path configPath;
         String configString;
         try {
-            configPath = Paths.get(configFile.getAbsolutePath());
+            Path configPath = Paths.get(configFile.getAbsolutePath());
             configString = new String(Files.readAllBytes(configPath));
         }
         catch (Exception e) {
-            warning("Cannor read config file : " + configFile.getAbsolutePath());
+            error("Cannot read config file : " + configFile.getAbsolutePath());
             info(CONFIG_IGNORED);
             return;
         }
@@ -80,7 +79,7 @@ public class Config {
         JSONObject config;
         try { config = new JSONObject(configString); }
         catch (JSONException e) {
-            warning("Syntax error in config file : " + configFile.getAbsolutePath());
+            error("Syntax error in config file : " + configFile.getAbsolutePath());
             info(CONFIG_IGNORED);
             return;
         }

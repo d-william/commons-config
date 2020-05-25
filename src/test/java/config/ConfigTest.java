@@ -11,7 +11,7 @@ class ConfigTest {
 
     @Test
     void initDefaultNameConfig() {
-        Config.initConfig();
+        Config.init();
         assertEquals("true", Config.get("shouldBeTrue"));
         assertEquals("ABC", Config.get("shouldBeABC"));
         assertNull(Config.get("nothing"));
@@ -19,7 +19,7 @@ class ConfigTest {
 
     @Test
     void initSystemConfig() {
-        Config.initConfig("system.conf");
+        Config.init("system.conf");
         assertEquals("false", Config.get("shouldBeFalse"));
         assertEquals("XYZ", Config.get("shouldBeXYZ"));
         assertNull(Config.get("nothing"));
@@ -27,7 +27,7 @@ class ConfigTest {
 
     @Test
     void initJsonConfig() {
-        Config.initConfig("json.conf");
+        Config.init("json.conf");
         assertEquals("true", Config.get("shouldBeTrue"));
         assertEquals("ABC", Config.get("shouldBeABC"));
         assertNull(Config.get("nothing"));
@@ -36,7 +36,7 @@ class ConfigTest {
 
     @Test
     void initExceptionConfig() {
-        Config.initConfig("exception.conf");
+        Config.init("exception.conf");
         assertNull(Config.get("nullVal"));
         assertNull(Config.get(""));
         assertNull(Config.get("nothing"));

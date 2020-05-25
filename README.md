@@ -18,7 +18,7 @@ application.conf :
 Java :
 
 ```java
-Config.initConfig();
+Config.init();
 String b =  Config.get("Key1"); // "true"
 String str =  Config.get("Key2"); // "ABC"
 String number =  Config.get("Key3"); // "42"
@@ -28,7 +28,7 @@ String json =  Config.get("jsonKey.SubKey"); // "VALUE"
 You can also init a specific file :
 
 ```java
-Config.initConfig("path/filename.conf");
+Config.init("path/filename.conf");
 ```
 
 ## Download
