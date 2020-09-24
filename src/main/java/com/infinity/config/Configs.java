@@ -257,9 +257,4 @@ public class Configs {
         return new AtomicLong(getNumberOrElse(tree, elseValue).longValue());
     }
 
-    public static void main(String[] args) {
-        Config init = init("/home/william/workspace/java/InfinityConfig/application.conf");
-        Integer o = init.get("shouldBeABC");
-    }
-
 }
