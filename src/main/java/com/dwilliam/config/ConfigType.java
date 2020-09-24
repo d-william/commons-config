@@ -1,4 +1,4 @@
-package com.infinity.config;
+package com.dwilliam.config;
 
 public enum ConfigType {
 

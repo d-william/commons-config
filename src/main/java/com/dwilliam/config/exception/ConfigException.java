@@ -1,4 +1,4 @@
-package com.infinity.config.exception;
+package com.dwilliam.config.exception;
 
 public abstract class ConfigException extends RuntimeException {
 

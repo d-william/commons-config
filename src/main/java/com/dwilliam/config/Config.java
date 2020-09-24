@@ -1,9 +1,8 @@
-package com.infinity.config;
+package com.dwilliam.config;
 
+import com.dwilliam.config.exception.*;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.infinity.config.exception.*;
 
 import java.io.File;
@@ -14,7 +13,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.text.ParseException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;

@@ -1,8 +1,8 @@
-package com.infinity.config;
+package com.dwilliam.config;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.infinity.config.exception.NoSuchConfigException;
+import com.dwilliam.config.exception.NoSuchConfigException;
 
 import java.io.File;
 import java.math.BigDecimal;

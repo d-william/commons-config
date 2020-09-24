@@ -1,6 +1,4 @@
-package com.infinity.config.exception;
-
-import java.nio.file.Path;
+package com.dwilliam.config.exception;
 
 public class NoSuchConfigException extends ConfigException {
 
