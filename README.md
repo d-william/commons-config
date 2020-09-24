@@ -18,19 +18,36 @@ application.conf :
 Java :
 
 ```java
-Config.init();
-String b =  Config.get("Key1"); // "true"
-String str =  Config.get("Key2"); // "ABC"
-String number =  Config.get("Key3"); // "42"
-String json =  Config.get("jsonKey.SubKey"); // "VALUE"
+Configs.init();
+boolean b =  Config.getBoolean("Key1"); // true
+String str =  Config.getString("Key2"); // "ABC"
+Integer number =  Config.getInteger("Key3"); // 42
+String json =  Config.getString("jsonKey.SubKey"); // "VALUE"
 ```
 
 You can also init a specific file :
 
 ```java
-Config.init("path/filename.conf");
+Configs.init("path/filename.conf");
 ```
 
-## Download
-
-[commons-config-1.0.1.jar](https://github.com/d-william/InfinityConfig/releases/download/1.0.1/commons-config-1.0.1.jar)
+## Maven
+### Repository
+File: <i>pom.xml</i>
+```Xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+### Dependency
+File: <i>pom.xml</i>
+```Xml
+<dependency>
+    <groupId>com.github.d-william</groupId>
+    <artifactId>commons-config</artifactId>
+    <version>2.0.1</version>
+</dependency>
+```
