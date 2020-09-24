@@ -1,130 +1,294 @@
 package com.infinity.config;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.infinity.config.exception.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.CharacterCodingException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.text.ParseException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Config {
 
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss.SSS]");
+    private final Map<String, Object> config = new HashMap<>();
 
-    private static final String WARN              = "[WARNING]";
-    private static final String ERROR             = "[ERROR]";
-    private static final String INFO              = "[INFO]";
-    private static final String CONFIG            = "[CONFIG] : ";
-    private static final String CONFIG_IGNORED    = "The config is ignored";
-    private static final String CONFIG_KEY_PREFIX = "config.";
-    private static final String DEFAULT_CONFIG    = "application.conf";
-
-    private static void warning(String message) {
-        System.out.println(dateFormat.format(new Date()) + WARN + CONFIG + message);
+    public Config() {
+        this(Configs.defaultConfigFile());
     }
 
-    private static void info(String message) {
-        System.out.println(dateFormat.format(new Date()) + INFO + CONFIG + message);
+    public Config(String path) {
+        this(path, Configs.defaultConfigType());
     }
 
-    private static void error(String message) {
-        System.out.println(dateFormat.format(new Date()) + ERROR + CONFIG + message);
+    public Config(File file) {
+        this(file, Configs.defaultConfigType());
     }
 
-    public static void init() {
-        String configName = System.getProperty(CONFIG_KEY_PREFIX + "filename");
-        if (configName == null) init(DEFAULT_CONFIG);
-        else init(configName);
+    public Config(Path path) {
+        this(path, Configs.defaultConfigType());
     }
 
-    public static void init(String configName) {
+    public Config(ConfigType type) {
+        this(Configs.defaultConfigFile(), type);
+    }
 
-        if (configName == null) {
-            error("Given config name is null");
-            return;
-        }
+    public Config(boolean log) {
+        this(Configs.defaultConfigFile(), log);
+    }
 
-        if ("".equals(configName)) {
-            error("Given config name is empty");
-            return;
-        }
+    public Config(String path, ConfigType type) {
+        this(path, type, Configs.defaultConfigLog());
+    }
 
-        File configFile = new File(configName);
-        if (!configFile.exists()) {
-            error(configFile.getAbsolutePath() + " does not exist");
-            info(CONFIG_IGNORED);
-            return;
-        }
-        if (!configFile.isFile()) {
-            error(configFile.getAbsolutePath() + " is not a file");
-            info(CONFIG_IGNORED);
-            return;
-        }
+    public Config(File file, ConfigType type) {
+        this(file, type, Configs.defaultConfigLog());
+    }
+
+    public Config(Path path, ConfigType type) {
+        this(path, type, Configs.defaultConfigLog());
+    }
+
+    public Config(String path, boolean log) {
+        this(path, Configs.defaultConfigType(), log);
+    }
+
+    public Config(File file, boolean log) {
+        this(file, Configs.defaultConfigType(), log);
+    }
+
+    public Config(Path path, boolean log) {
+        this(path, Configs.defaultConfigType(), log);
+    }
+
+    public Config(ConfigType type, boolean log) {
+        this(Configs.defaultConfigFile(), type, log);
+    }
+
+    public Config(String path, ConfigType type, boolean log) {
+        this(new File(path), type, log);
+    }
+
+    public Config(File file, ConfigType type, boolean log) {
+        this(Path.of(file.getPath()), type, log);
+    }
+
+    public Config(Path path, ConfigType type, boolean log) {
+        Objects.requireNonNull(path, "path is null");
+        Objects.requireNonNull(path, "config type is null");
 
         String configString;
         try {
-            Path configPath = Paths.get(configFile.getAbsolutePath());
-            configString = new String(Files.readAllBytes(configPath));
+            configString = Files.readString(path);
         }
-        catch (Exception e) {
-            error("Cannot read config file : " + configFile.getAbsolutePath());
-            info(CONFIG_IGNORED);
-            return;
+        catch (NoSuchFileException e) {
+            throw new NoSuchConfigFileException(path);
         }
-
-        JSONObject config;
-        try { config = new JSONObject(configString); }
-        catch (JSONException e) {
-            error("Syntax error in config file : " + configFile.getAbsolutePath());
-            info(CONFIG_IGNORED);
-            return;
+        catch (CharacterCodingException e) {
+            throw new ConfigFileEncodingException(path);
+        }
+        catch (IOException e) {
+            throw new ConfigFileException(path, e.getMessage());
+        }
+        catch (OutOfMemoryError e) {
+            throw new ConfigFileTooLargeException(path);
         }
 
-        info("Init " + configName);
-        initJson(CONFIG_KEY_PREFIX, config.toMap());
-        info("Finish init " + configName);
+        String name = path.toString();
+        Configs.CONFIGS.put(name.substring(0, name.lastIndexOf('.')), this);
 
+        switch (type) {
+            case JSON:
+                HashMap<String, Object> json;
+                try { json = Configs.MAPPER.readValue(configString, Configs.TYPE_REFERENCE); }
+                catch (JsonParseException e) { throw new ConfigFileJsonParseException(path, "Not a json"); }
+                catch (JsonMappingException e) { throw new ConfigFileJsonParseException(path, "Not an json object"); }
+                catch (IOException e) { throw new ConfigFileJsonParseException(path, e.getMessage()); }
+                initJson(null, json, log);
+            break;
+            case XML:
+                break;
+            case YAML:
+                break;
+        }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void initJson(String path, Map<String, Object> json) {
+    private void initJson(String tree, Map<String, Object> json, boolean log) {
+        tree = tree == null ? "" : tree + ".";
         for (Map.Entry<String, Object> entry : json.entrySet()) {
-            try {
-                Object value = entry.getValue();
-                if (value instanceof Map) {
-                    initJson(path + entry.getKey() + '.', (Map) value);
-                }
-                else {
-                    if (entry.getKey().isBlank()) {
-                        warning("There are a empty key in config");
-                        info(entry.getValue().toString() + " value is ignored");
-                        continue;
-                    }
-                    System.setProperty(path + entry.getKey(), entry.getValue().toString());
-                    info(entry.getKey() + "=" + entry.getValue().toString());
-                }
+            Object value = entry.getValue();
+            String subTree = tree + entry.getKey();
+            if (value instanceof Map) {
+                initJson(subTree, (Map<String, Object>) value, log);
             }
-            catch (NullPointerException e) {
-                warning(entry.getKey() + " is null");
-                info(entry.getKey() + " key is ignored");
+            else {
+                this.config.put(subTree, value);
+                if (log) System.out.println("[CONFIG] : " + subTree + " = " + value);
             }
-            catch (Exception e) { throw new RuntimeException("error at " + path + entry.getKey(), e); }
         }
     }
 
-    public static String get(String key) {
-        if (key.isBlank()) return null;
-        try { return System.getProperty(CONFIG_KEY_PREFIX + key); }
-        catch (NullPointerException e) { return null; }
+    public int size() {
+        return this.config.size();
     }
 
-    public static String getOrElse(String key, String elseValue) {
-        String value = get(key);
+    public boolean isEmpty() {
+        return this.config.isEmpty();
+    }
+
+    public boolean containsKey(String tree) {
+        return this.config.containsKey(tree);
+    }
+
+    public boolean containsValue(Object object) {
+        return this.config.containsValue(object);
+    }
+
+    public <T> T get(String tree) {
+        return (T) this.config.get(tree);
+    }
+
+    public <T> T getOrElse(String tree, T elseValue) {
+        T value = get(tree);
         return value == null ? elseValue : value;
+    }
+
+    public Number getNumber(String tree) {
+        return get(tree);
+    }
+
+    public Number getNumberOrElse(String tree, Number elseValue) {
+        return getOrElse(tree, elseValue);
+    }
+
+    public String getString(String tree) {
+        return get(tree);
+    }
+
+    public String getStringOrElse(String tree, String elseValue) {
+        return getOrElse(tree, elseValue);
+    }
+
+    public Boolean getBoolean(String tree) {
+        return get(tree);
+    }
+
+    public Boolean getBooleanOrElse(String tree, Boolean elseValue) {
+        return getOrElse(tree, elseValue);
+    }
+
+    public Character getCharacter(String tree) {
+        String value;
+        try { value = get(tree); }
+        catch (Exception e) { throw new ClassCastException("Cannot cast " + tree + "value to Character"); }
+        if (value.length() != 1) throw new ClassCastException("Cannot cast string of length != 1 to Character");
+        return value.charAt(0);
+    }
+
+    public Character getCharacterOrElse(String tree, Character elseValue) {
+        return getOrElse(tree, elseValue);
+    }
+
+    public Integer getInteger(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.intValue();
+    }
+
+    public Integer getIntegerOrElse(String tree, Integer elseValue) {
+        return getNumberOrElse(tree, elseValue).intValue();
+    }
+
+    public Long getLong(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.longValue();
+    }
+
+    public Long getLongOrElse(String tree, Long elseValue) {
+        return getNumberOrElse(tree, elseValue).longValue();
+    }
+
+    public Float getFloat(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.floatValue();
+    }
+
+    public Float getFloatOrElse(String tree, Float elseValue) {
+        return getNumberOrElse(tree, elseValue).floatValue();
+    }
+
+    public Double getDouble(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.doubleValue();
+    }
+
+    public Double getDoubleOrElse(String tree, Double elseValue) {
+        return getNumberOrElse(tree, elseValue).doubleValue();
+    }
+
+    public Byte getByte(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.byteValue();
+    }
+
+    public Byte getByteOrElse(String tree, Byte elseValue) {
+        return getNumberOrElse(tree, elseValue).byteValue();
+    }
+
+    public Short getShort(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : number.shortValue();
+    }
+
+    public Short getShortOrElse(String tree, Short elseValue) {
+        return getNumberOrElse(tree, elseValue).shortValue();
+    }
+
+    public BigDecimal getBigDecimal(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : BigDecimal.valueOf(number.doubleValue());
+    }
+
+    public BigDecimal getBigDecimalOrElse(String tree, BigDecimal elseValue) {
+        return BigDecimal.valueOf(getNumberOrElse(tree, elseValue).doubleValue());
+    }
+
+    public BigInteger getBigInteger(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : BigInteger.valueOf(number.intValue());
+    }
+
+    public BigInteger getBigIntegerOrElse(String tree, BigInteger elseValue) {
+        return BigInteger.valueOf(getNumberOrElse(tree, elseValue).intValue());
+    }
+
+    public AtomicInteger getAtomicInteger(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : new AtomicInteger(number.intValue());
+    }
+
+    public AtomicInteger getAtomicIntegerOrElse(String tree, AtomicInteger elseValue) {
+        return new AtomicInteger(getNumberOrElse(tree, elseValue).intValue());
+    }
+
+    public AtomicLong getAtomicLong(String tree) {
+        Number number = getNumber(tree);
+        return number == null ? null : new AtomicLong(number.longValue());
+    }
+
+    public AtomicLong getAtomicLongOrElse(String tree, AtomicLong elseValue) {
+        return new AtomicLong(getNumberOrElse(tree, elseValue).longValue());
     }
 
 }
