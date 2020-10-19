@@ -1,5 +1,6 @@
 package com.dwilliam.config;
 
+import com.dwilliam.config.exception.NoSuchConfigValueException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dwilliam.config.exception.NoSuchConfigException;
@@ -16,7 +17,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Configs {
 
-    public static final String DEFAULT_CONFIG = "application.conf";
+    public static final String DEFAULT_CONFIG;
+
+    static {
+        String property = System.getProperty("config-path");
+        if (property != null) DEFAULT_CONFIG = property;
+        else {
+            String environment = System.getenv("CONFIG_PATH");
+            if (environment != null) DEFAULT_CONFIG = environment;
+            else DEFAULT_CONFIG = "application.conf";
+        }
+        init();
+    }
 
     static final ObjectMapper MAPPER = new ObjectMapper();
     static final TypeReference<HashMap<String, Object>> TYPE_REFERENCE = new TypeReference<>() {};
@@ -144,15 +156,15 @@ public class Configs {
         return getOrElse(tree, elseValue);
     }
 
-    public static Boolean getBoolean(String tree) {
+    public static boolean getBoolean(String tree) {
         return get(tree);
     }
 
-    public static Boolean getBooleanOrElse(String tree, Boolean elseValue) {
+    public static boolean getBooleanOrElse(String tree, boolean elseValue) {
         return getOrElse(tree, elseValue);
     }
 
-    public static Character getCharacter(String tree) {
+    public static char getCharacter(String tree) {
         String config = defaultConfigFile();
         try {
             return CONFIGS.get(config.substring(0, config.lastIndexOf("."))).getCharacter(tree);
@@ -162,62 +174,68 @@ public class Configs {
         }
     }
 
-    public static Character getCharacterOrElse(String tree, Character elseValue) {
+    public static char getCharacterOrElse(String tree, char elseValue) {
         Character value = getCharacter(tree);
         return value == null ? elseValue : value;
     }
 
-    public static Integer getInteger(String tree) {
+    public static int getInteger(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.intValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.intValue();
     }
 
-    public static Integer getIntegerOrElse(String tree, Integer elseValue) {
+    public static int getIntegerOrElse(String tree, int elseValue) {
         return getNumberOrElse(tree, elseValue).intValue();
     }
 
-    public static Long getLong(String tree) {
+    public static long getLong(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.longValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.longValue();
     }
 
-    public static Long getLongOrElse(String tree, Long elseValue) {
+    public static long getLongOrElse(String tree, long elseValue) {
         return getNumberOrElse(tree, elseValue).longValue();
     }
 
-    public static Float getFloat(String tree) {
+    public static float getFloat(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.floatValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.floatValue();
     }
 
-    public static Float getFloatOrElse(String tree, Float elseValue) {
+    public static float getFloatOrElse(String tree, float elseValue) {
         return getNumberOrElse(tree, elseValue).floatValue();
     }
 
-    public static Double getDouble(String tree) {
+    public static double getDouble(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.doubleValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.doubleValue();
     }
 
-    public static Double getDoubleOrElse(String tree, Double elseValue) {
+    public static double getDoubleOrElse(String tree, double elseValue) {
         return getNumberOrElse(tree, elseValue).doubleValue();
     }
 
-    public static Byte getByte(String tree) {
+    public static byte getByte(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.byteValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.byteValue();
     }
 
-    public static Byte getByteOrElse(String tree, Byte elseValue) {
+    public static byte getByteOrElse(String tree, byte elseValue) {
         return getNumberOrElse(tree, elseValue).byteValue();
     }
 
-    public static Short getShort(String tree) {
+    public static short getShort(String tree) {
         Number number = getNumber(tree);
-        return number == null ? null : number.shortValue();
+        if (number == null) throw new NoSuchConfigValueException(tree);
+        return number.shortValue();
     }
 
-    public static Short getShortOrElse(String tree, Short elseValue) {
+    public static short getShortOrElse(String tree, short elseValue) {
         return getNumberOrElse(tree, elseValue).shortValue();
     }
 
