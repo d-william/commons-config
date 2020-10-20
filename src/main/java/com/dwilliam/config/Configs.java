@@ -17,45 +17,44 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Configs {
 
-    public static final String DEFAULT_CONFIG;
-
     static final ObjectMapper MAPPER = new ObjectMapper();
     static final TypeReference<HashMap<String, Object>> TYPE_REFERENCE = new TypeReference<>() {};
     static final Map<String, Config> CONFIGS = new HashMap<>();
 
+    static final String ENV_CONFIG_PATH = "APP_CONFIG_PATH";
+    static final String ENV_CONFIG_TYPE = "APP_CONFIG_TYPE";
+    static final String ENV_CONFIG_LOG = "APP_CONFIG_LOG";
+
+    static final String PROP_CONFIG_PATH = "app-config-path";
+    static final String PROP_CONFIG_TYPE = "app-config-type";
+    static final String PROP_CONFIG_LOG = "app-config-log";
+
     static {
-        String property = System.getProperty("config-path");
-        if (property != null) DEFAULT_CONFIG = property;
-        else {
-            String environment = System.getenv("CONFIG_PATH");
-            if (environment != null) DEFAULT_CONFIG = environment;
-            else DEFAULT_CONFIG = "application.conf";
-        }
         init();
     }
 
     public static Config init() {
-        return init(defaultConfigFile());
+        return init(defaultConfigFile(), defaultConfigType(), defaultConfigLog());
     }
 
     public static Config init(String path) {
-        return init(path, defaultConfigType());
+        return init(path, defaultConfigType(), defaultConfigLog());
     }
 
     public static Config init(File file) {
-        return init(file, defaultConfigType());
+        return init(file, defaultConfigType(), defaultConfigLog());
     }
 
     public static Config init(Path path) {
-        return init(path, defaultConfigType());
+        return init(path, defaultConfigType(), defaultConfigLog());
     }
 
     public static Config init(ConfigType type) {
-        return init(defaultConfigFile(), type);
+        return init(defaultConfigFile(), type, defaultConfigLog());
     }
 
     public static Config init(boolean log) {
-        return init(defaultConfigFile(), log);
+        return init(defaultConfigFile(), defaultConfigType(), log);
     }
 
     public static Config init(String path, ConfigType type) {
@@ -99,18 +98,27 @@ public class Configs {
         return new Config(path, type, log);
     }
 
+    static String defaultConfigVar(String propertyName, String environmentName, String defaultValue) {
+        String property = System.getProperty(propertyName);
+        if (property != null) return property;
+        else {
+            String environment = System.getenv(environmentName);
+            if (environment != null) return environment;
+            else return defaultValue;
+        }
+    }
+
     static String defaultConfigFile() {
-        String filename = System.getenv("CONFIG_FILENAME");
-        return filename == null ? DEFAULT_CONFIG : filename;
+        return defaultConfigVar(PROP_CONFIG_PATH, ENV_CONFIG_PATH, "application.conf");
     }
 
     static ConfigType defaultConfigType() {
-        String type = System.getenv("CONFIG_TYPE");
+        String type = defaultConfigVar(PROP_CONFIG_TYPE, ENV_CONFIG_TYPE, null);
         return type == null ? ConfigType.JSON : ConfigType.valueOf(type);
     }
 
     static boolean defaultConfigLog() {
-        String bool = System.getenv("CONFIG_LOG");
+        String bool = defaultConfigVar(PROP_CONFIG_LOG, ENV_CONFIG_LOG, null);
         return bool == null || Boolean.parseBoolean(bool);
     }
 
@@ -273,6 +281,19 @@ public class Configs {
 
     public static AtomicLong getAtomicLongOrElse(String tree, AtomicLong elseValue) {
         return new AtomicLong(getNumberOrElse(tree, elseValue).longValue());
+    }
+
+    public static <E extends Enum<E>> E getEnumValue(String tree, Class<E> clazz) {
+        return Enum.valueOf(clazz, getString(tree));
+    }
+
+    public static <E extends Enum<E>> E getEnumValue(String tree, E elseValue, Class<E> clazz) {
+        try {
+            return Enum.valueOf(clazz, getString(tree));
+        }
+        catch (Exception e) {
+            return elseValue;
+        }
     }
 
 }

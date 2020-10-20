@@ -23,27 +23,27 @@ public class Config {
     private final Map<String, Object> config = new HashMap<>();
 
     public Config() {
-        this(Configs.defaultConfigFile());
+        this(Configs.defaultConfigFile(), Configs.defaultConfigType(), Configs.defaultConfigLog());
     }
 
     public Config(String path) {
-        this(path, Configs.defaultConfigType());
+        this(path, Configs.defaultConfigType(), Configs.defaultConfigLog());
     }
 
     public Config(File file) {
-        this(file, Configs.defaultConfigType());
+        this(file, Configs.defaultConfigType(), Configs.defaultConfigLog());
     }
 
     public Config(Path path) {
-        this(path, Configs.defaultConfigType());
+        this(path, Configs.defaultConfigType(), Configs.defaultConfigLog());
     }
 
     public Config(ConfigType type) {
-        this(Configs.defaultConfigFile(), type);
+        this(Configs.defaultConfigFile(), type, Configs.defaultConfigLog());
     }
 
     public Config(boolean log) {
-        this(Configs.defaultConfigFile(), log);
+        this(Configs.defaultConfigFile(), Configs.defaultConfigType(), log);
     }
 
     public Config(String path, ConfigType type) {
@@ -189,7 +189,7 @@ public class Config {
     public Character getCharacter(String tree) {
         String value;
         try { value = get(tree); }
-        catch (Exception e) { throw new ClassCastException("Cannot cast " + tree + "value to Character"); }
+        catch (Exception e) { throw new ClassCastException("Cannot cast " + tree + " value to Character"); }
         if (value.length() != 1) throw new ClassCastException("Cannot cast string of length != 1 to Character");
         return value.charAt(0);
     }
