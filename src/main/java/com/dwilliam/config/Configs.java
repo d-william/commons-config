@@ -19,6 +19,10 @@ public class Configs {
 
     public static final String DEFAULT_CONFIG;
 
+    static final ObjectMapper MAPPER = new ObjectMapper();
+    static final TypeReference<HashMap<String, Object>> TYPE_REFERENCE = new TypeReference<>() {};
+    static final Map<String, Config> CONFIGS = new HashMap<>();
+
     static {
         String property = System.getProperty("config-path");
         if (property != null) DEFAULT_CONFIG = property;
@@ -29,10 +33,6 @@ public class Configs {
         }
         init();
     }
-
-    static final ObjectMapper MAPPER = new ObjectMapper();
-    static final TypeReference<HashMap<String, Object>> TYPE_REFERENCE = new TypeReference<>() {};
-    static final Map<String, Config> CONFIGS = new HashMap<>();
 
     public static Config init() {
         return init(defaultConfigFile());
