@@ -1,4 +1,4 @@
-# InfinityConfig
+# commons-config
 JSON to configuration
 
 ## Usage
